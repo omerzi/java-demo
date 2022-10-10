@@ -9,10 +9,18 @@ pipelines:
       - name: build_backapp_mvn
         type: MvnBuild
         configuration:
+          runtime:      
+            type: image
+            image:
+              custom:
+                name: platform-eu.stg.gcp.devopsacc.team/urs-docker/jfrog/pipelines-u18java
+                tag: "14"
+                registry: artifactory_docker
+                sourceRepository: urs-docker
           environmentVariables:
             JFROG_CLI_BUILD_NAME: "{{ gitBranch }}_backapp_mvn"
             JFROG_CLI_BUILD_URL: "${step_url}${res_src_code_backapp_mvn_branchName}"
-            JFROG_CLI_LOG_LEVEL: DEBUG
+            JFROG_CLI_LOG_LEVEL: INFO
             M2_HOME: /usr/local/apache-maven-3.6.3/
           mvnCommand: clean package --no-transfer-progress
           sourceLocation: src
@@ -27,7 +35,8 @@ pipelines:
           outputResources:
             - name: bi_backapp_mvn
           integrations:
-            - name: artifactory_eu
+            - name: artifactory_eu_https
+            - name: artifactory_docker
         execution:
           onStart:
             - ls -l ${res_src_code_backapp_mvn_resourcePath}/src
@@ -80,7 +89,7 @@ pipelines:
     configuration:
       environmentVariables:
         readOnly:
-          registryFQDN: yann-sbx.dev.gcp.devopsacc.team
+          registryFQDN: platform-eu.stg.gcp.devopsacc.team
           dockerRepoName: urs-docker
           skipScan: "true"
           pushRepo: urs-docker-dev-local
@@ -116,7 +125,8 @@ pipelines:
             - name: src_dockerfile_backapp_mvn
             - name: fs_backapp_mvn
           integrations:
-            - name: artifactory_eu
+            - name: artifactory_eu_https
+            - name: artifactory_docker
         execution:
           onStart:
             # - pwd && ls -l
@@ -142,7 +152,7 @@ pipelines:
           inputSteps:
             - name: build_backapp_mvn_docker
           integrations:
-            - name: artifactory_eu
+            - name: artifactory_eu_https
           outputResources:
             - name: bi_backapp_mvn_docker
         execution:

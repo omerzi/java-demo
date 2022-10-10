@@ -10,7 +10,7 @@ pipeline {
             spec:
               containers:
               - name: maven
-                image: maven:alpine
+                image: maven:3.8.4-eclipse-temurin-11-alpine
                 command:
                 - cat
                 tty: true
@@ -42,7 +42,7 @@ pipeline {
         DOCKER_BUILD_NAME='jenkins-java-docker'
         DOCKER_REGISTRY_URL=sh(returnStdout: true, script: """ if [ \"${params.DOCKER_SUB_DOMAIN}\" = \"true\" ]; then echo \"${params.DOCKER_REPO}.${params.JPD_URL}\"; else echo \"${params.JPD_URL}/${params.DOCKER_REPO}\"; fi""").trim()
         
-        JAVA_HOME = '/usr/lib/jvm/java-1.8-openjdk/'
+        //JAVA_HOME = '/usr/lib/jvm/java-1.8-openjdk/'
         MAVEN_HOME = '/usr/share/maven'
     }
 
@@ -92,7 +92,11 @@ pipeline {
             steps {
                 container('maven') {
                     
-                    git branch: params.MY_GIT_BRANCH , url: params.MY_GIT_URL
+                    //git branch: params.MY_GIT_BRANCH , url: params.MY_GIT_URL
+                    sh """#!/bin/sh
+                        apk add git curl openjdk11 jq
+                        git clone ${params.MY_GIT_URL} -b ${params.MY_GIT_BRANCH}
+                    """
 
                     dir ("src") {
 
@@ -118,15 +122,15 @@ pipeline {
                             id: "MAVEN_DEPLOYER",
                             serverId: env.ART_ID,
                             properties: ["app.name=${params.APP_NAME}","app.version=${params.NEW_VERSION}"],
-                            releaseRepo: env.MVN_REPO,
-                            snapshotRepo: env.MVN_REPO
+                            releaseRepo: params.MVN_REPO,
+                            snapshotRepo: params.MVN_REPO
                         )
         
                         rtMavenResolver (
                             id: "MAVEN_RESOLVER",
                             serverId: env.ART_ID,
-                            releaseRepo: env.MVN_REPO,
-                            snapshotRepo: env.MVN_REPO
+                            releaseRepo: params.MVN_REPO,
+                            snapshotRepo: params.MVN_REPO
                         )
                         
                         rtBuildInfo (
@@ -135,7 +139,7 @@ pipeline {
          
                             buildName: env.MY_BUILD_NAME,
                             buildNumber: env.BUILD_NUMBER,
-    			            maxBuilds: 1,
+    			    maxBuilds: 1,
                             // doNotDiscardBuilds: ['4'],
             			    // deleteBuildArtifacts: true
                         )
@@ -149,13 +153,16 @@ pipeline {
                                 --user=${ARTY_CREDS_USR}  \
                                 --password="${ARTY_CREDS_PSW}" \
                             yann-rt
+                            ./jf mvn-config \
+				--server-id-resolve=yann-rt \
+				--repo-resolve-releases=${params.MVN_REPO} \
+				--repo-resolve-snapshots=${params.MVN_REPO}
                             ./jf audit-mvn
-
                         """
 
                         rtMavenRun (
                             pom: "pom.xml",
-                            goals: 'clean package -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn',
+                            goals: 'clean install -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn',
                             deployerId: "MAVEN_DEPLOYER",
                             resolverId: "MAVEN_RESOLVER",
                             buildName: env.MY_BUILD_NAME,
@@ -280,7 +287,7 @@ pipeline {
                     )
                     
                     sh """#!/bin/sh
-                        apk add curl openjdk11
+                        apk add curl openjdk11 libc6-compat
                         echo ${env.DOCKER_REGISTRY_URL}
                         git_path=`echo ${params.MY_GIT_URL} | cut -d/ -f4,5`
                         echo \${git_path}
