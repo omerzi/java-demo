@@ -33,8 +33,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup jf CLI
-        uses: jf/setup-jf-cli@v2 
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v2 
         with:
           version: ${{ env.JF_CLI_VERSION }}
     
@@ -100,8 +100,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup jf CLI
-        uses: jf/setup-jf-cli@v2  
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v2  
         with:
           version: ${{ env.JF_CLI_VERSION }}
 
