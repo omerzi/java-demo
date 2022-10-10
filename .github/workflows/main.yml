@@ -4,15 +4,15 @@ name: java-webapp-gha
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ "improvement/jfrogcli"]
+    branches: [ "main"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 env:
-  JF_ARTIFACTORY_1: ${{ secrets.JF_ARTIFACTORY_SECRET_1 }}
-  JF_ID: yann-gcp-dev
-  JF_CLI_VERSION: 2.11.0
+  JF_ENV_1: ${{ secrets.JF_SECRET }}
+  JF_ID: yann-sbx
+  JF_CLI_VERSION: 2.27.1
   APP_VERSION: 2.0.0
   MVN_REPO: urs-mvn
    
@@ -22,19 +22,19 @@ jobs:
     if: ${{ true }}
     runs-on: ubuntu-latest
     env:
-      JFROG_BUILD_STATUS: PASS
+      jf_BUILD_STATUS: PASS
       JAVA_VERSION: 16.0.2+7
       JAVA_DIST: zulu
       MVN_VERSION: 3.8.2
-      # required by JFrog CLI
-      # M2_HOME: /opt/hostedtoolcache/maven/3.8.2/x64 # NOT required in JFrog CLI v2.3.0
+      # required by jf CLI
+      # M2_HOME: /opt/hostedtoolcache/maven/3.8.2/x64 # NOT required in jf CLI v2.3.0
       MVN_REPO: urs-mvn
       PROMOTE_REPO: urs-mvn-release-local
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup JFrog CLI
-        uses: jfrog/setup-jfrog-cli@v2.0.0  
+      - name: Setup jf CLI
+        uses: jf/setup-jf-cli@v2 
         with:
           version: ${{ env.JF_CLI_VERSION }}
     
@@ -51,14 +51,14 @@ jobs:
     
       - name: Ping Artifactory
         run: |
-            jfrog --version
-            jfrog config show
-            jfrog rt ping
+            jf --version
+            jf config show
+            jf rt ping
             env
             
       - name: Configure JFrog CLI with Maven client
         run: | 
-          jfrog rt mvnc \
+          jf rt mvnc \
                   --server-id-resolve=${{ env.JF_ID }} \
                   --repo-resolve-releases=${{ env.MVN_REPO }}	\
                   --repo-resolve-snapshots=${{ env.MVN_REPO }}	\
@@ -67,25 +67,25 @@ jobs:
                   --repo-deploy-snapshots=${{ env.MVN_REPO }}
 
       - name: Scan dependencies
-        run:  cd src && jfrog audit-mvn 
+        run:  cd src && jf audit
 
       - name: Build webapp and scan generated artifact before upload
-        run: jfrog rt mvn -f src/ clean install --no-transfer-progress  --scan=true
+        run: jf rt mvn -f src/ clean install --no-transfer-progress  --scan=true
         
       - name: Publish Build Info
         run: |
           # Collect environment variables for the build
-          jfrog rt bce 
+          jf rt bce 
           # Collect VCS details from git and add them to the build
-          jfrog rt bag
+          jf rt bag
           # Publish build info
-          jfrog rt bp
+          jf rt bp
           
       - name: Run test 
         run: echo running tests ...
 
       - name: Promote Build 
-        run: jfrog rt bpr --fail-fast=false --status "TEST_OK" --comment "promoted to the next level" ${{ env.PROMOTE_REPO }}
+        run: jf rt bpr --fail-fast=false --status "TEST_OK" --comment "promoted to the next level" ${{ env.PROMOTE_REPO }}
   
   build_docker:
     if: ${{ true }}
@@ -100,18 +100,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup JFrog CLI
-        uses: jfrog/setup-jfrog-cli@v2.0.0  
+      - name: Setup jf CLI
+        uses: jf/setup-jf-cli@v2  
         with:
           version: ${{ env.JF_CLI_VERSION }}
 
       - name: Download webapp
         run: |
-          jfrog rt download \
-            --build $JFROG_CLI_BUILD_NAME/$JFROG_CLI_BUILD_NUMBER  \
+          jf rt download \
+            --build $jf_CLI_BUILD_NAME/$jf_CLI_BUILD_NUMBER  \
             --exclusions "*.pom;*library*" \
             --flat=true \
-            --build-name=docker-$JFROG_CLI_BUILD_NAME --build-number=$JFROG_CLI_BUILD_NUMBER \
+            --build-name=docker-$jf_CLI_BUILD_NAME --build-number=$jf_CLI_BUILD_NUMBER \
             --fail-no-op=true \
             --module=webapp \
             ${{ env.MVN_REPO }} src/multi-module-application.jar
@@ -132,24 +132,22 @@ jobs:
 
       - name: Scan Docker image
         run: |
-          # docker save -o my-image.tar ${{ env.DOCKER_REG }}/${{ env.DOCKER_REPO }}/gha-java-webapp:${{ env.APP_VERSION }}  
-          # jfrog xr s my-image.tar
-          jfrog docker scan ${{ env.DOCKER_REG }}/${{ env.DOCKER_REPO }}/gha-java-webapp:${{ env.APP_VERSION }}
+          jf docker scan ${{ env.DOCKER_REG }}/${{ env.DOCKER_REPO }}/gha-java-webapp:${{ env.APP_VERSION }}
 
       - name: Push Docker image
-        run: jfrog rt dp ${{ env.DOCKER_REG }}/${{ env.DOCKER_REPO }}/gha-java-webapp:${{ env.APP_VERSION }} ${{ env.DOCKER_REPO }} --build-name=docker-$JFROG_CLI_BUILD_NAME --build-number=$JFROG_CLI_BUILD_NUMBER
+        run: jf rt dp ${{ env.DOCKER_REG }}/${{ env.DOCKER_REPO }}/gha-java-webapp:${{ env.APP_VERSION }} ${{ env.DOCKER_REPO }} --build-name=docker-$jf_CLI_BUILD_NAME --build-number=$jf_CLI_BUILD_NUMBER
 
       - name: Publish Docker Build Info
         run: |
-          jfrog rt bce docker-$JFROG_CLI_BUILD_NAME $JFROG_CLI_BUILD_NUMBER
-          jfrog rt bag docker-$JFROG_CLI_BUILD_NAME $JFROG_CLI_BUILD_NUMBER
-          jfrog rt bp docker-$JFROG_CLI_BUILD_NAME $JFROG_CLI_BUILD_NUMBER
+          jf rt bce docker-$jf_CLI_BUILD_NAME $jf_CLI_BUILD_NUMBER
+          jf rt bag docker-$jf_CLI_BUILD_NAME $jf_CLI_BUILD_NUMBER
+          jf rt bp docker-$jf_CLI_BUILD_NAME $jf_CLI_BUILD_NUMBER
 
       # - name: Scan Build 
-      #   run: jfrog bs --fail=false docker-$JFROG_CLI_BUILD_NAME $JFROG_CLI_BUILD_NUMBER
+      #   run: jf bs --fail=false docker-$jf_CLI_BUILD_NAME $jf_CLI_BUILD_NUMBER
 
-      - name: Deploy and Test 
-        run: echo deploy and run test
+      # - name: Deploy and Test 
+      #   run: echo deploy and run test
 
-      - name: Promote Build 
-        run: jfrog rt bpr --fail-fast=false --status "XRAY_SCAN_OK" --source-repo ${{ env.SRC_REPO }} --comment "promoted to the next level" docker-$JFROG_CLI_BUILD_NAME $JFROG_CLI_BUILD_NUMBER ${{ env.PROMOTE_REPO }}
+      # - name: Promote Build 
+      #   run: jf rt bpr --fail-fast=false --status "XRAY_SCAN_OK" --source-repo ${{ env.SRC_REPO }} --comment "promoted to the next level" docker-$jf_CLI_BUILD_NAME $jf_CLI_BUILD_NUMBER ${{ env.PROMOTE_REPO }}
