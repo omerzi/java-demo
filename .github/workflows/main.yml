@@ -22,7 +22,8 @@ jobs:
     if: ${{ true }}
     runs-on: ubuntu-latest
     env:
-      jf_BUILD_STATUS: PASS
+      JF_ENV_1: ${{ secrets.JF_SECRET }}
+      JFROG_BUILD_STATUS: PASS
       JAVA_VERSION: 16.0.2+7
       JAVA_DIST: zulu
       MVN_VERSION: 3.8.2
