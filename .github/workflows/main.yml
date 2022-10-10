@@ -71,7 +71,7 @@ jobs:
         run:  cd src && jf audit
 
       - name: Build webapp and scan generated artifact before upload
-        run: jf rt mvn -f src/ clean install --no-transfer-progress
+        run: jf mvn clean install -f src/  --no-transfer-progress
         
       - name: Publish Build Info
         run: |
@@ -109,10 +109,10 @@ jobs:
       - name: Download webapp
         run: |
           jf rt download \
-            --build $jf_CLI_BUILD_NAME/$jf_CLI_BUILD_NUMBER  \
+            --build $JFROG_CLI_BUILD_NAME/$JFROG_CLI_BUILD_NUMBER  \
             --exclusions "*.pom;*library*" \
             --flat=true \
-            --build-name=docker-$jf_CLI_BUILD_NAME --build-number=$jf_CLI_BUILD_NUMBER \
+            --build-name=docker-$JFROG_CLI_BUILD_NAME --build-number=$JFROG_CLI_BUILD_NUMBER \
             --fail-no-op=true \
             --module=webapp \
             ${{ env.MVN_REPO }} src/multi-module-application.jar
