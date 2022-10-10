@@ -135,13 +135,13 @@ jobs:
           jf docker scan ${{ env.DOCKER_REG }}/${{ env.DOCKER_REPO }}/gha-java-webapp:${{ env.APP_VERSION }}
 
       - name: Push Docker image
-        run: jf rt dp ${{ env.DOCKER_REG }}/${{ env.DOCKER_REPO }}/gha-java-webapp:${{ env.APP_VERSION }} ${{ env.DOCKER_REPO }} --build-name=docker-$jf_CLI_BUILD_NAME --build-number=$jf_CLI_BUILD_NUMBER
+        run: jf docker push ${{ env.DOCKER_REG }}/${{ env.DOCKER_REPO }}/gha-java-webapp:${{ env.APP_VERSION }} --build-name=docker-$JFROG_CLI_BUILD_NAME --build-number=$JFROG_CLI_BUILD_NUMBER
 
       - name: Publish Docker Build Info
         run: |
-          jf rt bce docker-$jf_CLI_BUILD_NAME $jf_CLI_BUILD_NUMBER
-          jf rt bag docker-$jf_CLI_BUILD_NAME $jf_CLI_BUILD_NUMBER
-          jf rt bp docker-$jf_CLI_BUILD_NAME $jf_CLI_BUILD_NUMBER
+          jf rt bce docker-$JFROG_CLI_BUILD_NAME $JFROG_CLI_BUILD_NUMBER
+          jf rt bag docker-$JFROG_CLI_BUILD_NAME $JFROG_CLI_BUILD_NUMBER
+          jf rt bp docker-$JFROG_CLI_BUILD_NAME $JFROG_CLI_BUILD_NUMBER
 
       # - name: Scan Build 
       #   run: jf bs --fail=false docker-$jf_CLI_BUILD_NAME $jf_CLI_BUILD_NUMBER
