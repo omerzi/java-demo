@@ -3,7 +3,10 @@ on:
   # After a pull request opened, Frogbot automatically creates the "🐸 frogbot scan" label if needed.
   # After "🐸 frogbot scan" label was added to a pull request, Frogbot scans the pull request.
   pull_request_target:
-    types: [opened]
+    types: [opened, synchronize]
+permissions:
+  pull-requests: write
+  contents: read
 jobs:
   #scan-pull-request:
   create-fix-pull-requests
