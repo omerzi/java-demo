@@ -5,8 +5,11 @@ on:
   pull_request_target:
     types: [opened, synchronize]
 permissions:
+#  pull-requests: write
+#  contents: read
+  contents: write 
   pull-requests: write
-  contents: read
+  security-events: write
 jobs:
 #  scan-pull-request:
   create-fix-pull-requests:
