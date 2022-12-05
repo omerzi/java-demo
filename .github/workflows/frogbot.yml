@@ -3,10 +3,12 @@ on:
   # After a pull request opened, Frogbot automatically creates the "🐸 frogbot scan" label if needed.
   # After "🐸 frogbot scan" label was added to a pull request, Frogbot scans the pull request.
   pull_request_target:
-    types: [labeled, opened]
+    types: [opened]
 jobs:
-  scan-pull-request:
+  #scan-pull-request:
+  create-fix-pull-requests
     runs-on: ubuntu-latest
+    environment: frogbot
     steps:
       - uses: actions/checkout@v2
         with:
@@ -19,8 +21,10 @@ jobs:
           java-version: "11"
           distribution: "temurin"
 
-      - uses: jfrog/frogbot@v1
+      - uses: jfrog/frogbot@v2
         env:
+          JF_INSTALL_DEPS_CMD: "mvn install"
+
           # [Mandatory] 
           # JFrog platform URL
           JF_URL: ${{ secrets.JF_URL }}
@@ -41,7 +45,7 @@ jobs:
 
           # [Mandatory if JF_USER and JF_PASSWORD are not provided] 
           # JFrog access token with 'read' permissions on Xray service
-          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+          #JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
 
           # [Optional] 
           # Xray Watches. Learn more about them here: https://www.jfrog.com/confluence/display/JFROG/Configuring+Xray+Watches
