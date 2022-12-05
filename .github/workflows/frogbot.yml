@@ -9,7 +9,7 @@ permissions:
   contents: read
 jobs:
   scan-pull-request:
-  #create-fix-pull-requests
+#  create-fix-pull-requests
     runs-on: ubuntu-latest
     environment: frogbot
     steps:
@@ -26,7 +26,7 @@ jobs:
 
       - uses: jfrog/frogbot@v2
         env:
-          # JF_INSTALL_DEPS_CMD: "mvn install"
+          #JF_INSTALL_DEPS_CMD: "mvn install"
 
           # [Mandatory] 
           # JFrog platform URL
